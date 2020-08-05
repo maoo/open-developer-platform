@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - master
+      - docusaurus-migration
     paths:
       - '.github/workflows/docusaurus.yml'
       - 'docs/**'
@@ -23,6 +24,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   REPO_NAME: ${{ github.event.repository.name }}
   PATCH_SCRIPT_URL: https://raw.githubusercontent.com/finos/open-developer-platform/master/scripts/patch-docusaurus-config.sh
+  CONTRIBUTE_SCRIPT_URL: https://raw.githubusercontent.com/finos/open-developer-platform/master/scripts/build-contribute-page.sh
 
 jobs:
   website-build:
@@ -32,8 +34,10 @@ jobs:
       uses: actions/checkout@v1
     - name: Install Node
       uses: actions/setup-node@v1
+      with:
+        node-version: '12'
     - name: Install Website deps
-      run: npm install --prefix website
+      run: yarn --cwd website install
     - name: Patch forked version
       run: |
         # Extract GitHub org/user and patch siteConfig.js only if not "finos"
@@ -43,8 +47,11 @@ jobs:
         then echo "Repo organization is '$REPO_ORG', patching docusaurus configuration to work on a forked repo" ; curl ${{ env.PATCH_SCRIPT_URL }} |  bash -s -- ${{ env.REPO_NAME }} $REPO_ORG
         else echo "Skipping patching, as this is the FINOS Organization"
         fi
-    - name: Build Website
-      run: npm run build --prefix website
+    - name: Build Contributing page
+      run: |
+        curl ${{ env.CONTRIBUTE_SCRIPT_URL }} |  bash -s
+    - name: Install Website deps
+      run: yarn --cwd website build
     - name: Publish Website
       run: |
         # Extract GitHub org/user
@@ -64,14 +71,11 @@ jobs:
         git config --global user.name "$GIT_USERNAME"
         echo "machine github.com login $GIT_USERNAME password $GITHUB_TOKEN" > ~/.netrc
         # Run docusaurus-publish
-        GIT_USER=$GIT_USERNAME npm run publish-gh-pages --prefix website
-
-# TODO Getting 403 as described on https://github.com/danger/danger-js/issues/918
-#     - name: Add comment to PR
-#       if: github.event_name == 'pull_request'
-#       uses: unsplash/comment-on-pr@master
-#       with:
-#         msg: "Website preview available at https://${{ github.actor }}.github.io/${{ env.REPO_NAME }}"
-#     - name: Comment backup step
-#       if: failure()
-#       run: echo "Could not add comment, see error above"
+        GIT_USER=$GIT_USERNAME yarn --cwd website publish-gh-pages
+    - name: Create comment
+      if: github.event_name == 'pull_request'
+      uses: peter-evans/create-or-update-comment@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.number }}
+        body: Website [preview is available](https://${{ github.actor }}.github.io/${{ env.REPO_NAME }})

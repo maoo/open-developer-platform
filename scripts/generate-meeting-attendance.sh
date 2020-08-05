@@ -2,7 +2,7 @@
 
 # This script generates the meeting attendance for the passed list of assignees
 
-if [ "$ACTION" == "labeled" ]; then
+if [ "$ACTION" == "closed" ] || [ "$ACTION" == "labeled" ]; then
     ROSTER_ACTION="add"
 elif [ "$ACTION" == "unlabeled" ]; then
     ROSTER_ACTION="remove"
@@ -12,7 +12,7 @@ cat <<EOT >> metadata-tool/meeting-attendance.json
 {
     "org": "${ORG_NAME}",
     "repo": "${REPO_NAME}",
-    "attendants": "${ASSIGNEES}",
+    "issueNumber": "${ISSUE_NUMBER}",
     "date": "${MEETING_DATE}",
     "action": "${ROSTER_ACTION}"
 }

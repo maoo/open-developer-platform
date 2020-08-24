@@ -2,7 +2,7 @@
 module.exports = {
   title: 'Open Developer Platform',
   tagline: 'Delivering open source software development best practices whilst enforcing security and legal compliance for the financial services industry',
-  url: 'https://maoo.github.io/open-developer-platform',
+  url: 'https://odp.finos.org',
   baseUrl: '/',
   favicon: 'img/favicon/favicon-odp.ico',
   projectName: 'open-developer-platform',
